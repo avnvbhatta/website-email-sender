@@ -38,7 +38,7 @@ app.post('/', async (req, res) => {
             from: `${senderName} <${senderEmail}>`, // sender address
             to: `${process.env.GMAIL_NODEMAILER_EMAIL}, ${process.env.GMAIL_PRIMARY}`, // list of receivers
             subject: "Important! Email from website!", // Subject line
-            html: `<h1>Message from ${senderName}</h1><br>${message}`, // html body
+            html: `<h1>Message from ${senderName}</h1><h2>Email: ${senderEmail}</h2><br>${message}`, // html body
         });
 
         res.status(200).send("Message successfully sent.")
