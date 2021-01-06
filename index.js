@@ -4,6 +4,8 @@ const nodemailer = require("nodemailer");
 const express = require('express');
 const bodyParser = require('body-parser')
 const cors = require('cors')
+const axios = require('axios')
+
 
 //Initialize Express
 const app = express();
@@ -15,32 +17,35 @@ const port = process.env.PORT || 3008;
 app.use(bodyParser.json()); 
 app.use( bodyParser.urlencoded({ extended : true }) );
 
+const instance = axios.create({
+    baseURL: 'https://api.sendinblue.com/v3/',
+    headers: {
+        'accept': 'application/json',
+        'api-key': `${process.env.API_KEY}`,
+        'content-type': 'application/json'
+    }
+});
+
 //POST route to receive user data and send email
 app.post('/', async (req, res) => {
     //Get form data
     const {senderName, senderEmail, message} = req.body;
+    let data = {  
+        "sender": {  
+           "name": senderName,
+           "email": senderEmail
+        },
+        "to":[  
+           {  
+              "email": process.env.GMAIL,
+           }
+        ],
+        "subject": "Email from Website",
+        "htmlContent":`<html><head></head><body><h1>Email from ${senderName}</h1><h2>Email: ${senderEmail}</h2><br>${message}</body></html>`
+     }
     try{
-        let mailAccount = await nodemailer.createTestAccount();
-
-        // create reusable transporter object using the default SMTP transport
-        let transporter = nodemailer.createTransport({
-            host: "smtp.gmail.com",
-            port: 465,
-            secure: true, // true for 465, false for other ports
-            auth: {
-            user: process.env.GMAIL_NODEMAILER_EMAIL, // gmail email
-            pass: process.env.GMAIL_NODEMAILER_PASSWORD, // gmail password
-            },
-        });
-    
-        // send mail with defined transport object
-        let info = await transporter.sendMail({
-            from: `${senderName} <${senderEmail}>`, // sender address
-            to: `${process.env.GMAIL_NODEMAILER_EMAIL}, ${process.env.GMAIL_PRIMARY}`, // list of receivers
-            subject: "Important! Email from website!", // Subject line
-            html: `<h1>Message from ${senderName}</h1><h2>Email: ${senderEmail}</h2><br>${message}`, // html body
-        });
-
+        
+        let response = await instance.post('smtp/email', data);
         res.status(200).send("Message successfully sent.")
     }
     catch(error){
@@ -48,7 +53,6 @@ app.post('/', async (req, res) => {
         res.status(500).send("An error occured.");
     }
     
-
 })
   
  
